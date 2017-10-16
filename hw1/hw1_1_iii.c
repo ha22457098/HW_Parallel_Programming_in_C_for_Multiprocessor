@@ -39,6 +39,8 @@ int main (int argc, char *argv[]) {
        iter_end = iter_begin + local_n;        
    }
    
+   //printf("process %d 's iter_begin / iter_end : %ld / %ld \n", id, iter_begin, iter_end);
+   
    double startTime = 0.0;
    double totalTime = 0.0;
    startTime = MPI_Wtime();
@@ -64,7 +66,7 @@ int main (int argc, char *argv[]) {
       printf ("Process %d finished in time %f secs.\n", id, totalTime);
       fflush (stdout);
    } else {
-      printf ("Process %d finished in time %f secs.A total of %d solutions were found.\n\n", id, totalTime, count); 
+      printf ("Process %d finished in time %f secs. A total of %d solutions were found.\n\n", id, totalTime, count); 
       fflush (stdout);
    }
    
@@ -121,11 +123,13 @@ int checkCircuit (int id, long bits) {
        && (v[28] || v[29]) && (v[29] || !v[30])
        && (v[30] || v[31]) ) )
    {
+      /*
       printf ("%d) %d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d \n", id,
          v[31],v[30],v[29],v[28],v[27],v[26],v[25],v[24],v[23],v[22],
          v[21],v[20],v[19],v[18],v[17],v[16],v[15],v[14],v[13],v[12],
          v[11],v[10],v[9],v[8],v[7],v[6],v[5],v[4],v[3],v[2],v[1],v[0]);
       fflush (stdout);
+      */
       return 1;
    } else {
       return 0;
