@@ -3,13 +3,17 @@
 #include <time.h>
 #include <mpi.h>
 
+void local_sort(int* arrayp, int n);
+int cmp_int (const void * a, const void * b);
 
 int main(){
 	int id, comm_sz;
 	int n, local_n;
 	int *list, *local_list;
 	int i; // for loop
-	srand((unsigned)time(NULL));
+    int phase;
+    
+	srand((unsigned)time(NULL)); // for random
 
 	MPI_Init(NULL, NULL);
 	MPI_Comm_size(MPI_COMM_WORLD, &comm_sz);
@@ -22,6 +26,7 @@ int main(){
 		list = malloc(n*sizeof(int));
 		for (i=0; i<n; i++){
 			list[i] = rand();
+            // debug
             printf("ORIGINAL LIST[%d] = %d\n", i, list[i]);
 		}
 	}
@@ -42,11 +47,16 @@ int main(){
         local_list = malloc(local_n*sizeof(int));
         MPI_Recv(local_list, 1, newtype, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     }
-   
-	/*debug*/
+    
+    // local first sort
+    local_sort(local_list, local_n);
+    
+    /*debug*/
 	for (i=0; i<local_n; i++){
 		printf("id=%d ; local_n=%d ; local_list[%d]=%d\n", id, local_n, i, local_list[i]);
 	}
+    
+    //for (phase)
 
     MPI_Type_free(&newtype);
 	MPI_Finalize();
@@ -57,4 +67,16 @@ int main(){
         free(local_list);
     
 	return 0;
+}
+
+// use qsort for local sorting
+void local_sort(int* arrayp, int n)
+{
+    qsort(arrayp, n, sizeof(int), cmp_int);
+}
+
+// for qsort
+int cmp_int (const void * a, const void * b)
+{
+   return ( *(int*)a - *(int*)b );
 }
