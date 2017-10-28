@@ -17,26 +17,33 @@ int main(int argc, char *argv[]){
     long long local_n;
     long long num_in_circle = 0;
     int j;
+    
+    
     if (my_rank == 0){
+        // process 0 read n from user's keybroad input
         printf("Enter the number of tosses : ");
         scanf("%lli", &n);
+        // send n to each processes
         for (j=1; j<comm_sz; j++){
             MPI_Send(&n, 1, MPI_LONG_LONG, j, 0, MPI_COMM_WORLD);
         }
+        // calculate process 0's local n
         local_n = n-(n/(long long)(comm_sz))*(long long)(comm_sz-1);
     } else {
+        // receive n from process 0
         MPI_Recv(&n, 1, MPI_LONG_LONG, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        // calculate local n
         local_n = n/(long long)comm_sz;
     }
-    /*debug*/
-    //printf("process %d 's local_n : %lli\n", my_rank, local_n);
-    /*debug*/
     
+    // record start time
     double startTime = 0.0;
     double totalTime = 0.0;
     startTime = MPI_Wtime();
     
     srand((unsigned)time(NULL));
+    
+    // Monte Carlo
     double x;
     double y;
     double distance;
@@ -48,39 +55,26 @@ int main(int argc, char *argv[]){
             num_in_circle++;
     }
     
-    // data transfer with Tree-structured
+    /* data transfer with Tree-structured */
+    // height of the tree
     int phase_need = mylog2(comm_sz);
-    /*debug*/
-    //printf("phase_need : %d\n", phase_need);
-    /*debug*/
-    
+
     int phase;
     long long temp;
     for( phase=1; phase<=phase_need; phase++ ){
         if( my_rank != 0 ){
             if( my_rank % mypow2(phase) ){
                 MPI_Send(&num_in_circle, 1, MPI_LONG_LONG, my_rank-mypow2(phase-1), 0, MPI_COMM_WORLD);
-                /*
-                printf("process %d send to process %d\n", my_rank, my_rank-mypow2(phase-1));
-                fflush(stdout);
-                */
+                // each process send data once
                 break;
             } else {
                 if( my_rank+mypow2(phase-1) < comm_sz){
                     MPI_Recv(&temp, 1, MPI_LONG_LONG, my_rank+mypow2(phase-1), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                    /*
-                    printf("process %d receive from process %d\n", my_rank, my_rank+mypow2(phase-1));
-                    fflush(stdout);
-                    */
                     num_in_circle += temp;
                 }
             }
         } else {
             MPI_Recv(&temp, 1, MPI_LONG_LONG, mypow2(phase-1), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            /*
-            printf("process %d receive from process %d\n", my_rank, mypow2(phase-1));
-            fflush(stdout);
-            */
             num_in_circle += temp;
         }
     }
@@ -94,7 +88,6 @@ int main(int argc, char *argv[]){
         */
         ;
     } else {
-        //printf("%lli / %lli\n", num_in_circle, n);
         printf("process %d has finished in time %f secs. PI = %.10f\n", my_rank, totalTime,(num_in_circle/(double)(n))*4.0);
         fflush(stdout);
     }
