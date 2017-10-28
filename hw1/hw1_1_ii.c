@@ -20,13 +20,20 @@ int main (int argc, char *argv[]) {
    int id = 0;           /* process id */
    int count = 0;        /* number of solutions */
    
-   int comm_size;
+   int comm_size; // total # of processes
    int j; // for loop
    
+   // MPI 
    MPI_Init(NULL, NULL);
    MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
    MPI_Comm_rank(MPI_COMM_WORLD, &id);
    
+   // record start time
+   double startTime = 0.0;
+   double totalTime = 0.0;
+   startTime = MPI_Wtime();
+   
+   // each process calculate the range of n it need to calculate
    long n = UINT_MAX;
    long local_n = UINT_MAX / (long)(comm_size);
    long iter_begin;
@@ -39,18 +46,15 @@ int main (int argc, char *argv[]) {
        iter_end = iter_begin + local_n;        
    }
    
-   double startTime = 0.0;
-   double totalTime = 0.0;
-   startTime = MPI_Wtime();
-   
    for (i = iter_begin; i < iter_end; i++) {
       count += checkCircuit (id, i);
    }
    
-   //
+   // each process send resuld to process 0
    if (id != 0){
       MPI_Send(&count, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
    } else {
+      // process 0 receive data from other processes
       int temp;
       for ( j = 1; j < comm_size; j++){
           MPI_Recv(&temp, 1, MPI_INT, j, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -58,6 +62,7 @@ int main (int argc, char *argv[]) {
       }
    }
    
+   // calculate total time
    totalTime = MPI_Wtime()-startTime;
 
    if ( id != 0 ){

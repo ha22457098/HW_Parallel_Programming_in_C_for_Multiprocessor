@@ -20,24 +20,18 @@ int main (int argc, char *argv[]) {
    int id = 0;           /* process id */
    int count = 0;        /* number of solutions */
    
+   // to use MPI_Wtime
    MPI_Init(NULL, NULL);
-
-   /*
-   int comm_size;
-   
-   int j; // for loop
-
-   MPI_Init(NULL, NULL);
-   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
-   MPI_Comm_rank(MPI_COMM_WORLD, &id);
-   */
+    
    double startTime, totalTime;
+   // record start time
    startTime = MPI_Wtime();
    
    for (i = 0; i <= UINT_MAX; i++) {
       count += checkCircuit (id, i);
    }
    
+   // calculate total time
    totalTime = MPI_Wtime()-startTime;
    
    printf ("Process %d finished in time %f secs.\n", id, totalTime);
