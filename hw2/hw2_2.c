@@ -7,13 +7,14 @@ void local_sort(int* arrayp, int n);
 void copy_list(int* local_list, int n, int* sort_list);
 int cmp_int (const void * a, const void * b);
 
-int main(){
+int main()
+{
 	int id, comm_sz;
 	int n, local_n, id0_temp_n, sort_list_len;
 	int *list, *local_list, *sort_temp_list;
-	int i; // for loop
+	int i, j; // for loop
     int phase;
-    
+    double starttime, endtime;
     /*debug*/
     int *sol_list;
     
@@ -23,14 +24,18 @@ int main(){
 	MPI_Comm_size(MPI_COMM_WORLD, &comm_sz);
 	MPI_Comm_rank(MPI_COMM_WORLD, &id);
 
-	if (id == 0){
+	if (id == 0)
+    {
 		printf("Enter N = : ");
 		scanf("%d", &n);
 		
+        starttime = MPI_Wtime();
+        
 		list = malloc(n*sizeof(int));
         /*debug*/
         sol_list = malloc(n*sizeof(int)); 
-		for (i=0; i<n; i++){
+		for (i=0; i<n; i++)
+        {
 			list[i] = rand();
             // debug
             sol_list[i] = list[i];
@@ -46,8 +51,10 @@ int main(){
     MPI_Type_contiguous(local_n, MPI_INTEGER, &newtype);
     MPI_Type_commit(&newtype);
     
-    if ( id == 0 ){
-        for (i=1; i<comm_sz; i++){
+    if ( id == 0 )
+    {
+        for (i=1; i<comm_sz; i++)
+        {
             MPI_Send(list+(i-1)*local_n, 1, newtype, i, 0, MPI_COMM_WORLD);
         }
         id0_temp_n = local_n;
@@ -62,17 +69,21 @@ int main(){
     local_sort(local_list, local_n);
     
     // parallel odd-even sort
-    if (id == 0){
+    if (id == 0)
+    {
         sort_temp_list = malloc( (local_n+id0_temp_n)*sizeof(int) );
         sort_list_len = (local_n+id0_temp_n);
     } else if (id < comm_sz-1){
         sort_temp_list = malloc( local_n*2*sizeof(int) );
         sort_list_len = local_n*2;
     }
-    for ( phase=0; phase<n; phase++ ){
-        if ( phase%2 == 0){
+    for ( phase=0; phase<n; phase++ )
+    {
+        if ( phase%2 == 0)
+        {
             // even phase
-            if ( id%2 == 1 ){
+            if ( id%2 == 1 )
+            {
                 MPI_Send(local_list, 1, newtype, id-1, phase, MPI_COMM_WORLD);
                 //printf("phase=%d id=%d send to id=%d\n", phase, id, id-1);
                 MPI_Recv(local_list, 1, newtype, id-1, phase, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -94,7 +105,8 @@ int main(){
             */
         } else {
             // odd phase
-            if ( id%2 == 0 && id != 0 ){
+            if ( id%2 == 0 && id != 0 )
+            {
                 MPI_Send(local_list, 1, newtype, id-1, phase, MPI_COMM_WORLD);
                 //printf("phase=%d id=%d send to id=%d\n", phase, id, id-1);
                 MPI_Recv(local_list, 1, newtype, id-1, phase, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -117,10 +129,32 @@ int main(){
         }
     }
     
-    /*debug*/
+    // collect answer
+    if ( id != 0 )
+    {
+        MPI_Send( local_list, 1, newtype, 0, 0, MPI_COMM_WORLD);
+    } else {
+        j = 0;
+        copy_list(local_list, local_n, list);
+        j += local_n;
+        for (i=1; i<comm_sz; i++)
+        {
+            MPI_Recv( list+j, 1, newtype, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            j += id0_temp_n;
+        }
+    }
+    
+    /*debug
 	for (i=0; i<local_n; i++){
 		printf("ANS :: id=%d ; local_n=%d ; local_list[%d]=%d\n", id, local_n, i, local_list[i]);
 	}
+    */
+    /*debug*/
+    if (id == 0){
+        for (i=0; i<n; i++)
+            printf("ANS :: list[%d]=%d\n", i, list[i]);
+    }
+    
     /*debug*/
     if (id == 0){
         qsort(sol_list, n, sizeof(n), cmp_int);
@@ -151,7 +185,8 @@ void copy_list(int* local_list, int n, int* sort_list)
 {
     int i;
     
-    for (i=0; i<n; i++){
+    for (i=0; i<n; i++)
+    {
         sort_list[i] = local_list[i];
     }
 }
